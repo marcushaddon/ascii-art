@@ -1,0 +1,6 @@
+venv
+data
+*_out
+*.pyc
+*.jpg
+*.png
