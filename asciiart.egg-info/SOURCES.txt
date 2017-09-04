@@ -1,6 +1,0 @@
-asciiart.egg-info/PKG-INFO
-asciiart.egg-info/SOURCES.txt
-asciiart.egg-info/dependency_links.txt
-asciiart.egg-info/entry_points.txt
-asciiart.egg-info/requires.txt
-asciiart.egg-info/top_level.txt
