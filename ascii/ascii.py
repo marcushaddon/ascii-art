@@ -1,6 +1,5 @@
 from PIL import Image, ImageEnhance, ImageDraw, ImageFont
-# import numpy as np
-# from matplotlib import pyplot as plt
+import click
 
 CHARS = " .`-_':,;=/\"|)\\)ivxclrs{*}I?!][1taeo7zjLunT#JCwfy325Fp6mqSghVd4EgXPGZbYkOA&8U$@KHDBWNMR0QQ"
 
@@ -12,9 +11,9 @@ def lum_to_char(lum, threshhold=0):
         return CHARS[int(lum // 2.86)]
 
 
-def lum_matrix_by_point(image, fontsize):
+def lum_matrix_by_point(image, fontsize, font):
     """Sample each point at font size dimensions and return matrix of lum values."""
-    fnt = ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', fontsize)
+    fnt = ImageFont.truetype('fonts/' + font + '.ttf', fontsize)
     fntsize = fnt.getsize("A")
     return [[image.getpixel((x, y)) for x in range(0, image.width, fntsize[0])]
             for y in range(0, image.height, fntsize[1])]
@@ -40,10 +39,10 @@ def lum_matrix_to_char_matrix(lum_matrix, threshhold=0):
     """Convert luminecience matrix to char matrix."""
     return [[lum_to_char(lum, threshhold) for lum in row] for row in lum_matrix]
 
-def print_chars(char_matrix, image, fontsize):
+def print_chars(char_matrix, image, fontsize, font):
     """Print a char array over an image."""
     # get a font
-    fnt = ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', fontsize)
+    fnt = ImageFont.truetype('fonts/' + font + '.ttf', fontsize)
     y = 0
     fntheight = fnt.getsize("A")[1]
 
@@ -65,25 +64,33 @@ def image_to_ascii(infile_name, outfile_name, font_size):
 
     outimg = Image.new('RGBA', img.size, (255, 255, 255))
 
-    lums = lum_matrix_by_point(img, font_size)
+    lums = lum_matrix_by_point(img, font_size, 'arial')
     char_matrix = lum_matrix_to_char_matrix(lums)
 
-    print_chars(char_matrix, outimg, font_size)
+    print_chars(char_matrix, outimg, font_size, 'arial')
 
     outimg.save(outfile_name, 'PNG')
 
 
-def process_sequence(folder_name, font_size, ext='png'):
+def process_sequence(folder_name, font_size, font, ext='png'):
     """Convert a folder of images to a folder of ascii images."""
+    
+    print "BEEP BEEP BOOP PROCESSING FOLDER " + folder_name
+
+    out_folder = folder_name + '_out'
     from os import listdir, path, makedirs
 
     filenames = listdir(folder_name)
+
     imgs = [name for name in filenames if name[-len(ext):] == ext]
-    print "{0} to process".format(len(imgs))
+    print "{0} frames to process".format(len(imgs))
 
     # Create output folder
-    if not path.exists(folder_name + '_out'):
-        makedirs(folder_name + '_out')
+    if path.exists(out_folder):
+        import shutil
+        shutil.rmtree(out_folder)
+
+    makedirs(out_folder)
 
     print "Opening files."
     imgfiles = [Image.open(folder_name + '/' + img) for img in imgs]
@@ -92,7 +99,7 @@ def process_sequence(folder_name, font_size, ext='png'):
     bwimgs = [img.convert('L') for img in imgfiles]
 
     print "Converting to lum matrices."
-    lum_matrices = [lum_matrix_by_point(bwimg, font_size) for bwimg in bwimgs]
+    lum_matrices = [lum_matrix_by_point(bwimg, font_size, font) for bwimg in bwimgs]
 
     print "De-jittering lum matrices."
     reduce_flicker(lum_matrices, 20)
@@ -105,15 +112,25 @@ def process_sequence(folder_name, font_size, ext='png'):
         if index % 50 == 0:
             print "on #" + str(index)
         outimg = Image.new('RGBA', bwimgs[index].size, (255, 255, 255))
-        print_chars(char_matrices[index], outimg, font_size)
+        print_chars(char_matrices[index], outimg, font_size, font)
 
-        outpath = folder_name + '_out/' + img
+        outpath = out_folder + '/' + img
         outimg.save(outpath, 'PNG')
 
 
-process_sequence('data', 7)
+
 
 # TODO: Enable print char matrix regradless of font size, use 'threshold' argument
 # in lum_matrix_by_point instead of lum_matrix_to_char_matrix, lum_to_char.
 
+@click.command()
+@click.option('--infile', default='')
+@click.option('--fontsize', default=15)
+@click.option('--ext', default='png')
+@click.option('--font', default='freemono')
+def process(infile='', fontsize=15, font='freemono', ext='png'):
+    process_sequence(infile, fontsize, font, ext)
 
+
+if __name__ == '__main__':
+    process()
