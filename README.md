@@ -2,7 +2,7 @@
 Python module for converting images/batches of images to ASCII ART
 
 ## Installation
-1. Install python 2.7 (link)[https://www.python.org/downloads/release/python-2713/]
+1. Install python 2.7 [link](https://www.python.org/downloads/release/python-2713/)
 2. `sudo easy_install pip`
 3. `sudo pip install virtualenv`
 4. `git clone <this repo>`
