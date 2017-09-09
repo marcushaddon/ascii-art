@@ -3,19 +3,17 @@ import click
 
 CHARS = " .`-_':,;=/\"|)\\)ivxclrs{*}I?!][1taeo7zjLunT#JCwfy325Fp6mqSghVd4EgXPGZbYkOA&8U$@KHDBWNMR0QQ"
 
-def lum_to_char(lum, threshhold=0):
+def lum_to_char(lum):
     """Map a luminosity value to a character."""
-    if lum < threshhold:
-        return CHARS[0]
-    else:
-        return CHARS[int(lum // 2.86)]
+    return CHARS[int(lum // 2.86)]
 
 
-def lum_matrix_by_point(image, fontsize, font):
+def lum_matrix_by_point(image, fontsize, font, threshold=0):
     """Sample each point at font size dimensions and return matrix of lum values."""
     fnt = ImageFont.truetype('fonts/' + font + '.ttf', fontsize)
     fntsize = fnt.getsize("A")
-    return [[image.getpixel((x, y)) for x in range(0, image.width, fntsize[0])]
+    return [[image.getpixel((x, y)) if image.getpixel((x,y)) > threshold else 0
+            for x in range(0, image.width, fntsize[0])]
             for y in range(0, image.height, fntsize[1])]
 
 def reduce_flicker(lum_frames, amt):
@@ -36,9 +34,9 @@ def reduce_flicker(lum_frames, amt):
         prev = current
 
 
-def lum_matrix_to_char_matrix(lum_matrix, threshhold=0):
+def lum_matrix_to_char_matrix(lum_matrix):
     """Convert luminecience matrix to char matrix."""
-    return [[lum_to_char(lum, threshhold) for lum in row] for row in lum_matrix]
+    return [[lum_to_char(lum) for lum in row] for row in lum_matrix]
 
 def print_chars(char_matrix, image, fontsize, font):
     """Print a char array over an image."""
@@ -73,7 +71,7 @@ def image_to_ascii(infile_name, outfile_name, font_size):
     outimg.save(outfile_name, 'PNG')
 
 
-def process_sequence(folder_name, font_size, font, dejitter, ext='png'):
+def process_sequence(folder_name, font_size, font, dejitter, threshold, ext='png'):
     """Convert a folder of images to a folder of ascii images."""
 
     print "BEEP BEEP BOOP PROCESSING FOLDER " + folder_name
@@ -100,14 +98,15 @@ def process_sequence(folder_name, font_size, font, dejitter, ext='png'):
     bwimgs = [img.convert('L') for img in imgfiles]
 
     print "Converting to lum matrices."
-    lum_matrices = [lum_matrix_by_point(bwimg, font_size, font) for bwimg in bwimgs]
+    lum_matrices = [lum_matrix_by_point(bwimg, font_size, font, threshold)
+                    for bwimg in bwimgs]
 
     print "De-jittering lum matrices."
     if dejitter > 0:
         reduce_flicker(lum_matrices, dejitter)
 
     print "Converting to char matrices."
-    char_matrices = [lum_matrix_to_char_matrix(lum, 30) for lum in lum_matrices]
+    char_matrices = [lum_matrix_to_char_matrix(lum) for lum in lum_matrices]
 
     print "Writing imgs"
     for index, img in enumerate(imgs):
@@ -130,8 +129,9 @@ def process_sequence(folder_name, font_size, font, dejitter, ext='png'):
 @click.option('--fontsize')
 @click.option('--ext')
 @click.option('--dejitter')
+@click.option('--threshold')
 @click.option('--font')
-def process(infile, fontsize, font, dejitter, ext):
+def process(infile, fontsize, font, dejitter, threshold, ext):
     from settings import settings
     if fontsize is None:
         fontsize = settings['fontsize']
@@ -143,9 +143,14 @@ def process(infile, fontsize, font, dejitter, ext):
         dejitter = settings['dejitter']
     else:
         dejitter = int(dejitter)
+    if threshold is None:
+        threshold = settings['threshold']
+    else:
+        threshold = int(threshold)
     if ext is None:
         ext = settings['ext']
-    process_sequence(infile, fontsize, font, dejitter, ext)
+
+    process_sequence(infile, fontsize, font, dejitter, threshold, ext)
 
 
 if __name__ == '__main__':
