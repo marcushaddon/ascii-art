@@ -1,11 +1,21 @@
 from PIL import Image, ImageEnhance, ImageDraw, ImageFont
 import click
 
-CHARS = " .`-_':,;=/\"|)\\)ivxclrs{*}I?!][1taeo7zjLunT#JCwfy325Fp6mqSghVd4EgXPGZbYkOA&8U$@KHDBWNMR0QQ"
+from os import listdir
+print listdir('.')
+with open('chars.txt', 'r') as charstxt:
+    for line in charstxt:
+        if line[0] == '#':
+            continue
+        else:
+            CHARS = line
+
+print len(CHARS)
+ratio = 255.0/len(CHARS)
 
 def lum_to_char(lum):
     """Map a luminosity value to a character."""
-    return CHARS[int(lum // 2.86)]
+    return CHARS[int(lum // ratio)]
 
 
 def lum_matrix_by_point(image, fontsize, font, threshold=0):
