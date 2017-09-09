@@ -16,6 +16,9 @@ def lum_matrix_by_point(image, fontsize, font, threshold=0):
             for x in range(0, image.width, fntsize[0])]
             for y in range(0, image.height, fntsize[1])]
 
+def compress_lum_matrix(lum_matrix, degree):
+    return [[i - (i % degree) for i in row] for row in lum_matrix]
+
 def reduce_flicker(lum_frames, amt):
     """Lower tolerance for changes in luminosity to reduce flickering between frames."""
     width = len(lum_frames[0][0])
@@ -32,6 +35,7 @@ def reduce_flicker(lum_frames, amt):
                     current[y][x] = prev[y][x]
 
         prev = current
+
 
 
 def lum_matrix_to_char_matrix(lum_matrix):
@@ -93,6 +97,12 @@ def process_sequence(folder_name, font_size, font, dejitter, threshold, ext='png
 
     print "Opening files."
     imgfiles = [Image.open(folder_name + '/' + img) for img in imgs]
+    if len(imgfiles) == 0:
+        print """
+        Could not find any images with extension '.{0}' in folder '{1}'
+        """.format(ext, folder_name)
+        return
+
 
     print "Converting to BnW"
     bwimgs = [img.convert('L') for img in imgfiles]
@@ -103,7 +113,7 @@ def process_sequence(folder_name, font_size, font, dejitter, threshold, ext='png
 
     print "De-jittering lum matrices."
     if dejitter > 0:
-        reduce_flicker(lum_matrices, dejitter)
+        lum_matrices = [compress_lum_matrix(matrix, dejitter) for matrix in lum_matrices]
 
     print "Converting to char matrices."
     char_matrices = [lum_matrix_to_char_matrix(lum) for lum in lum_matrices]
