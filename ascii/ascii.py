@@ -127,11 +127,24 @@ def process_sequence(folder_name, font_size, font, dejitter, ext='png'):
 
 @click.command()
 @click.option('--infile', default='')
-@click.option('--fontsize', default=15)
-@click.option('--ext', default='png')
-@click.option('--dejitter', default=0)
-@click.option('--font', default='freemono')
-def process(infile='', fontsize=15, font='freemono', dejitter=0, ext='png'):
+@click.option('--fontsize')
+@click.option('--ext')
+@click.option('--dejitter')
+@click.option('--font')
+def process(infile, fontsize, font, dejitter, ext):
+    from settings import settings
+    if fontsize is None:
+        fontsize = settings['fontsize']
+    else:
+        fontsize = int(fontsize)
+    if font is None:
+        font = settings['font']
+    if dejitter is None:
+        dejitter = settings['dejitter']
+    else:
+        dejitter = int(dejitter)
+    if ext is None:
+        ext = settings['ext']
     process_sequence(infile, fontsize, font, dejitter, ext)
 
 
