@@ -29,8 +29,9 @@ def reduce_flicker(lum_frames, amt):
             for x in range(width):
                 clum = current[y][x]
                 plum = prev[y][x]
+
                 if abs(clum - plum) < amt:
-                    clum = plum
+                    current[y][x] = prev[y][x]
 
         prev = current
 
@@ -72,9 +73,9 @@ def image_to_ascii(infile_name, outfile_name, font_size):
     outimg.save(outfile_name, 'PNG')
 
 
-def process_sequence(folder_name, font_size, font, ext='png'):
+def process_sequence(folder_name, font_size, font, dejitter, ext='png'):
     """Convert a folder of images to a folder of ascii images."""
-    
+
     print "BEEP BEEP BOOP PROCESSING FOLDER " + folder_name
 
     out_folder = folder_name + '_out'
@@ -102,7 +103,8 @@ def process_sequence(folder_name, font_size, font, ext='png'):
     lum_matrices = [lum_matrix_by_point(bwimg, font_size, font) for bwimg in bwimgs]
 
     print "De-jittering lum matrices."
-    reduce_flicker(lum_matrices, 20)
+    if dejitter > 0:
+        reduce_flicker(lum_matrices, dejitter)
 
     print "Converting to char matrices."
     char_matrices = [lum_matrix_to_char_matrix(lum, 30) for lum in lum_matrices]
@@ -111,7 +113,7 @@ def process_sequence(folder_name, font_size, font, ext='png'):
     for index, img in enumerate(imgs):
         if index % 50 == 0:
             print "on #" + str(index)
-        outimg = Image.new('RGBA', bwimgs[index].size, (255, 255, 255))
+        outimg = Image.new('RGBA', bwimgs[index].size, (0, 0, 0, 0))
         print_chars(char_matrices[index], outimg, font_size, font)
 
         outpath = out_folder + '/' + img
@@ -127,9 +129,10 @@ def process_sequence(folder_name, font_size, font, ext='png'):
 @click.option('--infile', default='')
 @click.option('--fontsize', default=15)
 @click.option('--ext', default='png')
+@click.option('--dejitter', default=0)
 @click.option('--font', default='freemono')
-def process(infile='', fontsize=15, font='freemono', ext='png'):
-    process_sequence(infile, fontsize, font, ext)
+def process(infile='', fontsize=15, font='freemono', dejitter=0, ext='png'):
+    process_sequence(infile, fontsize, font, dejitter, ext)
 
 
 if __name__ == '__main__':
