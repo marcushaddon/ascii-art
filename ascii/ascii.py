@@ -14,12 +14,14 @@ if CHARS is None:
     print "chars.txt is fucked up..."
     quit()
 
-print len(CHARS)
-ratio = 255.0/len(CHARS)
+RATIO = 255.0/len(CHARS)
+# LUMINOSITY = (0.299, 0.587, 0.11)
+
+
 
 def lum_to_char(lum):
     """Map a luminosity value to a character."""
-    return CHARS[int(lum // ratio)]
+    return CHARS[int(lum // RATIO)]
 
 
 def lum_matrix_by_point(image, fontsize, font, threshold=0):
