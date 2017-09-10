@@ -89,14 +89,12 @@ def image_to_ascii(infile_name, outfile_name, font_size):
     outimg.save(outfile_name, 'PNG')
 
 
-def process_sequence(folder_name, outfile, font_size, font, dejitter, threshold, ext='png'):
+def process_sequence(folder_name, outfile, font_size, font, reduceflicker, threshold, ext='png'):
     """Convert a folder of images to a folder of ascii images."""
 
     print "BEEP BEEP BOOP PROCESSING FOLDER " + folder_name
 
     out_folder = outfile if outfile is not None else folder_name + '_out'
-    print out_folder
-    print outfile
 
     filenames = listdir(folder_name)
 
@@ -127,8 +125,8 @@ def process_sequence(folder_name, outfile, font_size, font, dejitter, threshold,
                     for bwimg in bwimgs]
 
     print "De-jittering lum matrices."
-    if dejitter > 0:
-        lum_matrices = [compress_lum_matrix(matrix, dejitter) for matrix in lum_matrices]
+    if reduceflicker > 0:
+        lum_matrices = [compress_lum_matrix(matrix, reduceflicker) for matrix in lum_matrices]
 
     print "Converting to char matrices."
     char_matrices = [lum_matrix_to_char_matrix(lum) for lum in lum_matrices]
@@ -157,33 +155,56 @@ def find_folder_count(folder_name):
 # in lum_matrix_by_point instead of lum_matrix_to_char_matrix, lum_to_char.
 
 @click.command()
-@click.option('--infile', default='')
-@click.option('--outfile')
-@click.option('--fontsize')
-@click.option('--ext')
-@click.option('--dejitter')
-@click.option('--threshold')
-@click.option('--font')
-def process(infile, outfile, fontsize, font, dejitter, threshold, ext):
+@click.option('--infile', default='',
+help="""
+Name of folder containing image sequence to be processed. REQUIRED.
+""")
+@click.option('--outfile',
+help="""
+Name of output folder. Default: 'infile + _out'
+""")
+@click.option('--fontsize', type=int,
+help="""
+Size of letters. Default: 15
+""")
+@click.option('--ext',
+help="""
+Extension of input image files (for distinguishing between input images and
+other extraneous files). Default: 'jpg'
+""")
+@click.option('--reduceflicker', type=int,
+help="""
+Amount (0-255) by which to reduce rapid flickering between characters. Default: 0
+""")
+@click.option('--threshold', type=int,
+help="""
+Luminescience (sp?) threshold. Pixels below this threshold are compressed to 0.
+""")
+@click.option('--font',
+help="""
+Name of .ttf file in /fonts to use. Must be a monospaced font, case-sensitive.
+(Do not include the extension, just the name).
+""")
+def process(infile, outfile, fontsize, font, reduceflicker, threshold, ext):
     from settings import settings
     if fontsize is None:
         fontsize = settings['fontsize']
-    else:
-        fontsize = int(fontsize)
     if font is None:
         font = settings['font']
-    if dejitter is None:
-        dejitter = settings['dejitter']
-    else:
-        dejitter = int(dejitter)
+    if reduceflicker is None:
+        reduceflicker = settings['reduceflicker']
     if threshold is None:
         threshold = settings['threshold']
-    else:
-        threshold = int(threshold)
     if ext is None:
         ext = settings['ext']
 
-    process_sequence(infile, outfile, fontsize, font, dejitter, threshold, ext)
+    process_sequence(infile,
+                    outfile,
+                    fontsize,
+                    font,
+                    reduceflicker,
+                    threshold,
+                    ext)
 
 
 if __name__ == '__main__':
