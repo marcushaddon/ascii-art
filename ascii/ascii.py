@@ -1,14 +1,18 @@
+from os import listdir, path, makedirs
 from PIL import Image, ImageEnhance, ImageDraw, ImageFont
 import click
 
-from os import listdir
-print listdir('.')
+CHARS = None
 with open('chars.txt', 'r') as charstxt:
     for line in charstxt:
         if line[0] == '#':
             continue
         else:
             CHARS = line
+
+if CHARS is None:
+    print "chars.txt is fucked up..."
+    quit()
 
 print len(CHARS)
 ratio = 255.0/len(CHARS)
@@ -85,13 +89,14 @@ def image_to_ascii(infile_name, outfile_name, font_size):
     outimg.save(outfile_name, 'PNG')
 
 
-def process_sequence(folder_name, font_size, font, dejitter, threshold, ext='png'):
+def process_sequence(folder_name, outfile, font_size, font, dejitter, threshold, ext='png'):
     """Convert a folder of images to a folder of ascii images."""
 
     print "BEEP BEEP BOOP PROCESSING FOLDER " + folder_name
 
-    out_folder = folder_name + '_out'
-    from os import listdir, path, makedirs
+    out_folder = outfile if outfile is not None else folder_name + '_out'
+    print out_folder
+    print outfile
 
     filenames = listdir(folder_name)
 
@@ -140,18 +145,26 @@ def process_sequence(folder_name, font_size, font, dejitter, threshold, ext='png
 
 
 
+def find_folder_count(folder_name):
+    folders = [folder for folder in listdir('.')
+               if folder[:len(folder_name)+5] == folder_name + '_out_']
+    nums = [int]
+    print "folders"
+    print folders
+    quit()
 
 # TODO: Enable print char matrix regradless of font size, use 'threshold' argument
 # in lum_matrix_by_point instead of lum_matrix_to_char_matrix, lum_to_char.
 
 @click.command()
 @click.option('--infile', default='')
+@click.option('--outfile')
 @click.option('--fontsize')
 @click.option('--ext')
 @click.option('--dejitter')
 @click.option('--threshold')
 @click.option('--font')
-def process(infile, fontsize, font, dejitter, threshold, ext):
+def process(infile, outfile, fontsize, font, dejitter, threshold, ext):
     from settings import settings
     if fontsize is None:
         fontsize = settings['fontsize']
@@ -170,7 +183,7 @@ def process(infile, fontsize, font, dejitter, threshold, ext):
     if ext is None:
         ext = settings['ext']
 
-    process_sequence(infile, fontsize, font, dejitter, threshold, ext)
+    process_sequence(infile, outfile, fontsize, font, dejitter, threshold, ext)
 
 
 if __name__ == '__main__':
