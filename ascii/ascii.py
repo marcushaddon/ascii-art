@@ -8,20 +8,23 @@ with open('chars.txt', 'r') as charstxt:
         if line[0] == '#':
             continue
         else:
-            CHARS = line
+            CHARS = line.rstrip()
 
 if CHARS is None:
     print "chars.txt is fucked up..."
     quit()
 
-RATIO = 255.0/len(CHARS)
-# LUMINOSITY = (0.299, 0.587, 0.11)
+MIN_CHAR = 0
+MAX_CHAR = len(CHARS) - 1
+print "MAX CHAR" + str(MAX_CHAR)
 
 
 
 def lum_to_char(lum):
     """Map a luminosity value to a character."""
-    return CHARS[int(lum // RATIO)]
+    # REF: https://stackoverflow.com/questions/345187/math-mapping-numbers
+    charidx = int(lum/255.0 * MAX_CHAR)
+    return CHARS[charidx]
 
 
 def lum_matrix_by_point(image, fontsize, font, threshold=0):
@@ -63,6 +66,7 @@ def print_chars(char_matrix, image, fontsize, font):
     # get a font
     fnt = ImageFont.truetype('fonts/' + font + '.ttf', fontsize)
     y = 0
+
     fntheight = fnt.getsize("A")[1]
 
     # get a drawing context
@@ -71,7 +75,12 @@ def print_chars(char_matrix, image, fontsize, font):
     txt_rows = [''.join(row) for row in char_matrix]
     for txt_row in txt_rows:
         # draw text
-        d.text((0, y), txt_row, font=fnt, fill=(0, 0, 0, 255))
+        try:
+            d.text((0, y), txt_row, font=fnt, fill=(0, 0, 0, 255))
+        except:
+            print "THERE ARN ERROR "
+            print list(txt_row)
+            quit()
         y += fntheight
 
 
