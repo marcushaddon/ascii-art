@@ -11,7 +11,7 @@ with open('chars.txt', 'r') as charstxt:
             CHARS = line.rstrip()
 
 if CHARS is None:
-    print "chars.txt is fucked up..."
+    print "chars.txt is messed up..."
     quit()
 
 MIN_CHAR = 0
