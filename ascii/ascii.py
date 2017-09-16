@@ -35,6 +35,13 @@ def lum_matrix_by_point(image, fontsize, font, threshold=0):
             for x in range(0, image.width, fntsize[0])]
             for y in range(0, image.height, fntsize[1])]
 
+def color_matrix_by_point(image, fontsize, font):
+    """Sample each point at font size dimensions and return matrix of lum values."""
+    fnt = ImageFont.truetype('fonts/' + font + '.ttf', fontsize)
+    fntsize = fnt.getsize("A")
+    return [[image.getpixel((x, y)) for x in range(0, image.width, fntsize[0])]
+            for y in range(0, image.height, fntsize[1])]
+
 def compress_lum_matrix(lum_matrix, degree):
     return [[i - (i % degree) for i in row] for row in lum_matrix]
 
@@ -61,11 +68,9 @@ def lum_matrix_to_char_matrix(lum_matrix):
     """Convert luminecience matrix to char matrix."""
     return [[lum_to_char(lum) for lum in row] for row in lum_matrix]
 
-def print_chars(char_matrix, image, fontsize, font):
+def print_chars(char_matrix, image, fontsize, font, color_matrix=None):
     """Print a char array over an image."""
     # get a font
-
-    print "Char matrix is {0} by {1}".format(len(char_matrix[0]), len(char_matrix))
     fnt = ImageFont.truetype('fonts/' + font + '.ttf', fontsize)
     y = 0
 
@@ -82,24 +87,17 @@ def print_chars(char_matrix, image, fontsize, font):
     # get a drawing context
     d = ImageDraw.Draw(image)
 
-    for row in char_matrix:
-        for char in row:
-            d.text((x,y), char, font=fnt, fill=(0,0,0,255))
+    for rownum, row in enumerate(char_matrix):
+        for charnum, char in enumerate(row):
+            rgba = (0,0,0,255)
+            if color_matrix is not None:
+                rgb = color_matrix[rownum][charnum]
+                rgba = (rgb[0], rgb[1], rgb[2], 255)
+
+            d.text((x,y), char, font=fnt, fill=rgba)
             x += fntwidth
         x = 0
         y += fntheight
-
-
-    # txt_rows = [''.join(row) for row in char_matrix]
-    # for txt_row in txt_rows:
-    #     # draw text
-    #     try:
-    #         d.text((0, y), txt_row, font=fnt, fill=(0, 0, 0, 255))
-    #     except:
-    #         print "THERE ARN ERROR "
-    #         print list(txt_row)
-    #         quit()
-    #     y += fntheight
 
 
 
@@ -146,6 +144,11 @@ def process_sequence(folder_name, outfile, font_size, font, reduceflicker, thres
         return
 
 
+    print "Sampling colors..."
+    color_matrices = [color_matrix_by_point(img, font_size, font)
+                    for img in imgfiles]
+
+
     print "Converting to BnW"
     bwimgs = [img.convert('L') for img in imgfiles]
 
@@ -165,7 +168,9 @@ def process_sequence(folder_name, outfile, font_size, font, reduceflicker, thres
         if index % 50 == 0:
             print "on #" + str(index)
         outimg = Image.new('RGBA', bwimgs[index].size, (0, 0, 0, 0))
-        print_chars(char_matrices[index], outimg, font_size, font)
+        color_matrix = (color_matrices[index]
+                        if color_matrices is not None else None)
+        print_chars(char_matrices[index], outimg, font_size, font, color_matrix)
 
         outpath = out_folder + '/' + img
         outimg.save(outpath, 'PNG')
