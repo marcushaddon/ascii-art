@@ -64,24 +64,42 @@ def lum_matrix_to_char_matrix(lum_matrix):
 def print_chars(char_matrix, image, fontsize, font):
     """Print a char array over an image."""
     # get a font
+
+    print "Char matrix is {0} by {1}".format(len(char_matrix[0]), len(char_matrix))
     fnt = ImageFont.truetype('fonts/' + font + '.ttf', fontsize)
     y = 0
 
-    fntheight = fnt.getsize("A")[1]
+    fntsize = fnt.getsize("A")
+    fntheight = fntsize[1]
+    fntwidth = fntsize[0]
+
+    imgheight = image.size[1]
+    imgwidth = image.size[0]
+
+    x = 0
+    y = 0
 
     # get a drawing context
     d = ImageDraw.Draw(image)
 
-    txt_rows = [''.join(row) for row in char_matrix]
-    for txt_row in txt_rows:
-        # draw text
-        try:
-            d.text((0, y), txt_row, font=fnt, fill=(0, 0, 0, 255))
-        except:
-            print "THERE ARN ERROR "
-            print list(txt_row)
-            quit()
+    for row in char_matrix:
+        for char in row:
+            d.text((x,y), char, font=fnt, fill=(0,0,0,255))
+            x += fntwidth
+        x = 0
         y += fntheight
+
+
+    # txt_rows = [''.join(row) for row in char_matrix]
+    # for txt_row in txt_rows:
+    #     # draw text
+    #     try:
+    #         d.text((0, y), txt_row, font=fnt, fill=(0, 0, 0, 255))
+    #     except:
+    #         print "THERE ARN ERROR "
+    #         print list(txt_row)
+    #         quit()
+    #     y += fntheight
 
 
 
