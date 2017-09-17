@@ -35,6 +35,13 @@ def lum_matrix_by_point(image, fontsize, font, threshold=0):
             for x in range(0, image.width, fntsize[0])]
             for y in range(0, image.height, fntsize[1])]
 
+def color_matrix_by_point(image, fontsize, font):
+    """Sample each point at font size dimensions and return matrix of lum values."""
+    fnt = ImageFont.truetype('fonts/' + font + '.ttf', fontsize)
+    fntsize = fnt.getsize("A")
+    return [[image.getpixel((x, y)) for x in range(0, image.width, fntsize[0])]
+            for y in range(0, image.height, fntsize[1])]
+
 def compress_lum_matrix(lum_matrix, degree):
     return [[i - (i % degree) for i in row] for row in lum_matrix]
 
@@ -61,26 +68,35 @@ def lum_matrix_to_char_matrix(lum_matrix):
     """Convert luminecience matrix to char matrix."""
     return [[lum_to_char(lum) for lum in row] for row in lum_matrix]
 
-def print_chars(char_matrix, image, fontsize, font):
+def print_chars(char_matrix, image, fontsize, font, color_matrix=None):
     """Print a char array over an image."""
     # get a font
     fnt = ImageFont.truetype('fonts/' + font + '.ttf', fontsize)
     y = 0
 
-    fntheight = fnt.getsize("A")[1]
+    fntsize = fnt.getsize("A")
+    fntheight = fntsize[1]
+    fntwidth = fntsize[0]
+
+    imgheight = image.size[1]
+    imgwidth = image.size[0]
+
+    x = 0
+    y = 0
 
     # get a drawing context
     d = ImageDraw.Draw(image)
 
-    txt_rows = [''.join(row) for row in char_matrix]
-    for txt_row in txt_rows:
-        # draw text
-        try:
-            d.text((0, y), txt_row, font=fnt, fill=(0, 0, 0, 255))
-        except:
-            print "THERE ARN ERROR "
-            print list(txt_row)
-            quit()
+    for rownum, row in enumerate(char_matrix):
+        for charnum, char in enumerate(row):
+            rgba = (0,0,0,255)
+            if color_matrix is not None:
+                rgb = color_matrix[rownum][charnum]
+                rgba = (rgb[0], rgb[1], rgb[2], 255)
+
+            d.text((x,y), char, font=fnt, fill=rgba)
+            x += fntwidth
+        x = 0
         y += fntheight
 
 
@@ -100,7 +116,7 @@ def image_to_ascii(infile_name, outfile_name, font_size):
     outimg.save(outfile_name, 'PNG')
 
 
-def process_sequence(folder_name, outfile, font_size, font, reduceflicker, threshold, ext='png'):
+def process_sequence(folder_name, outfile, font_size, font, reduceflicker, threshold, ext='png', nocolor=False):
     """Convert a folder of images to a folder of ascii images."""
 
     print "BEEP BEEP BOOP PROCESSING FOLDER " + folder_name
@@ -128,6 +144,13 @@ def process_sequence(folder_name, outfile, font_size, font, reduceflicker, thres
         return
 
 
+    color_matrices = None
+    if not nocolor:
+        print "Sampling colors..."
+        color_matrices = [color_matrix_by_point(img, font_size, font)
+                        for img in imgfiles]
+
+
     print "Converting to BnW"
     bwimgs = [img.convert('L') for img in imgfiles]
 
@@ -147,7 +170,9 @@ def process_sequence(folder_name, outfile, font_size, font, reduceflicker, thres
         if index % 50 == 0:
             print "on #" + str(index)
         outimg = Image.new('RGBA', bwimgs[index].size, (0, 0, 0, 0))
-        print_chars(char_matrices[index], outimg, font_size, font)
+        color_matrix = (color_matrices[index]
+                        if color_matrices is not None else None)
+        print_chars(char_matrices[index], outimg, font_size, font, color_matrix)
 
         outpath = out_folder + '/' + img
         outimg.save(outpath, 'PNG')
@@ -196,7 +221,11 @@ help="""
 Name of .ttf file in /fonts to use. Must be a monospaced font, case-sensitive.
 (Do not include the extension, just the name).
 """)
-def process(infile, outfile, fontsize, font, reduceflicker, threshold, ext):
+@click.option('--nocolor', is_flag=True,
+help="""
+Ignore color.
+""")
+def process(infile, outfile, fontsize, font, reduceflicker, threshold, ext, nocolor):
     from settings import settings
     if fontsize is None:
         fontsize = settings['fontsize']
@@ -215,7 +244,8 @@ def process(infile, outfile, fontsize, font, reduceflicker, threshold, ext):
                     font,
                     reduceflicker,
                     threshold,
-                    ext)
+                    ext,
+                    nocolor)
 
 
 if __name__ == '__main__':
