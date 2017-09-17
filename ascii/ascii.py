@@ -116,7 +116,7 @@ def image_to_ascii(infile_name, outfile_name, font_size):
     outimg.save(outfile_name, 'PNG')
 
 
-def process_sequence(folder_name, outfile, font_size, font, reduceflicker, threshold, ext='png'):
+def process_sequence(folder_name, outfile, font_size, font, reduceflicker, threshold, ext='png', nocolor=False):
     """Convert a folder of images to a folder of ascii images."""
 
     print "BEEP BEEP BOOP PROCESSING FOLDER " + folder_name
@@ -144,9 +144,11 @@ def process_sequence(folder_name, outfile, font_size, font, reduceflicker, thres
         return
 
 
-    print "Sampling colors..."
-    color_matrices = [color_matrix_by_point(img, font_size, font)
-                    for img in imgfiles]
+    color_matrices = None
+    if not nocolor:
+        print "Sampling colors..."
+        color_matrices = [color_matrix_by_point(img, font_size, font)
+                        for img in imgfiles]
 
 
     print "Converting to BnW"
@@ -219,7 +221,11 @@ help="""
 Name of .ttf file in /fonts to use. Must be a monospaced font, case-sensitive.
 (Do not include the extension, just the name).
 """)
-def process(infile, outfile, fontsize, font, reduceflicker, threshold, ext):
+@click.option('--nocolor', is_flag=True,
+help="""
+Ignore color.
+""")
+def process(infile, outfile, fontsize, font, reduceflicker, threshold, ext, nocolor):
     from settings import settings
     if fontsize is None:
         fontsize = settings['fontsize']
@@ -238,7 +244,8 @@ def process(infile, outfile, fontsize, font, reduceflicker, threshold, ext):
                     font,
                     reduceflicker,
                     threshold,
-                    ext)
+                    ext,
+                    nocolor)
 
 
 if __name__ == '__main__':
