@@ -16,7 +16,6 @@ if CHARS is None:
 
 MIN_CHAR = 0
 MAX_CHAR = len(CHARS) - 1
-print "MAX CHAR" + str(MAX_CHAR)
 
 
 
@@ -179,16 +178,14 @@ def process_sequence(folder_name, outfile, font_size, font, reduceflicker, thres
 
 
 
-def find_folder_count(folder_name):
-    folders = [folder for folder in listdir('.')
-               if folder[:len(folder_name)+5] == folder_name + '_out_']
-    nums = [int]
-    print "folders"
-    print folders
-    quit()
+def run(command):
+    from subprocess import Popen, PIPE
+    commands = command.split(' ')
+    process = Popen(commands, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = process.communicate()
+    return (stdout, stderr)
 
-# TODO: Enable print char matrix regradless of font size, use 'threshold' argument
-# in lum_matrix_by_point instead of lum_matrix_to_char_matrix, lum_to_char.
+
 
 @click.command()
 @click.option('--infile', default='',
