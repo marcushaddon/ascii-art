@@ -9,6 +9,7 @@ with open('chars.txt', 'r') as charstxt:
             continue
         else:
             CHARS = line.rstrip()
+            break
 
 if CHARS is None:
     print "chars.txt is messed up..."
