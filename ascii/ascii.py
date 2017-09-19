@@ -115,31 +115,31 @@ def image_to_ascii(infile_name, outfile_name, font_size):
     outimg.save(outfile_name, 'PNG')
 
 
-def process_sequence(folder_name, outfile, font_size, font, reduceflicker, threshold, ext='png', nocolor=False):
+def process_sequence(infile, outfile, font_size, font, reduceflicker, threshold, ext='png', nocolor=False):
     """Convert a folder of images to a folder of ascii images."""
 
-    print "BEEP BEEP BOOP PROCESSING FOLDER " + folder_name
+    print "BEEP BEEP BOOP PROCESSING file " + infile
 
-    out_folder = outfile if outfile is not None else folder_name + '_out'
+    temp_folder = infile.split('.')[0] + '_temp'
 
-    filenames = listdir(folder_name)
+    out_folder = outfile if outfile is not None else infile.split('.')[0] + '_out'
+    mkdir(temp_folder)
+    mkdir(out_folder)
+
+    print "Converting video to img sequence..."
+    run('ffmpeg -i ' + infile + ' ' + temp_folder + '/0%3d.png')
+
+    filenames = listdir(temp_folder)
 
     imgs = [name for name in filenames if name[-len(ext):] == ext]
     print "{0} frames to process".format(len(imgs))
 
-    # Create output folder
-    if path.exists(out_folder):
-        import shutil
-        shutil.rmtree(out_folder)
-
-    makedirs(out_folder)
-
     print "Opening files."
-    imgfiles = [Image.open(folder_name + '/' + img) for img in imgs]
+    imgfiles = [Image.open(temp_folder + '/' + img) for img in imgs]
     if len(imgfiles) == 0:
         print """
         Could not find any images with extension '.{0}' in folder '{1}'
-        """.format(ext, folder_name)
+        """.format(ext, temp_folder)
         return
 
 
@@ -147,7 +147,7 @@ def process_sequence(folder_name, outfile, font_size, font, reduceflicker, thres
     if not nocolor:
         print "Sampling colors..."
         color_matrices = [color_matrix_by_point(img, font_size, font)
-                        for img in imgfiles]
+                          for img in imgfiles]
 
 
     print "Converting to BnW"
@@ -173,17 +173,32 @@ def process_sequence(folder_name, outfile, font_size, font, reduceflicker, thres
                         if color_matrices is not None else None)
         print_chars(char_matrices[index], outimg, font_size, font, color_matrix)
 
-        outpath = out_folder + '/' + img
+        outpath = out_folder + '/' + img.split('.')[0] + '.png'
         outimg.save(outpath, 'PNG')
 
+    print "Cleaning up..."
+    rmdir(temp_folder)
+    # rmdir(out_folder)
 
 
 def run(command):
+    """Execute a bash command."""
     from subprocess import Popen, PIPE
     commands = command.split(' ')
     process = Popen(commands, stdout=PIPE, stderr=PIPE)
     stdout, stderr = process.communicate()
     return (stdout, stderr)
+
+def rmdir(folder_name):
+    """Remove a dir."""
+    if path.exists(folder_name):
+        import shutil
+        shutil.rmtree(folder_name)
+
+def mkdir(folder_name):
+    """Overwrite dir."""
+    rmdir(folder_name)
+    makedirs(folder_name)
 
 
 

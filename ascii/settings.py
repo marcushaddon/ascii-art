@@ -1,6 +1,6 @@
 settings = {
 "fontsize": 15,
-"ext": "jpg",
+"ext": "png",
 "reduceflicker": 0,
 "threshold": 30,
 "font": "freemono"
