@@ -123,7 +123,12 @@ def process_sequence(infile, outfile, font_size, font, reduceflicker, threshold,
 
     temp_folder = infile.split('.')[0] + '_temp'
 
-    out_folder = outfile if outfile is not None else infile.split('.')[0] + '_out'
+    if outfile is not None:
+        pathparts = infile.split('/')[:-1]
+        out_folder = '/'.join(pathparts) + '/' + outfile
+    else:
+        out_folder = infile.split('.')[0] + '_out'
+
     mkdir(temp_folder)
     mkdir(out_folder)
 

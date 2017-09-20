@@ -14,3 +14,7 @@ and is only there to serve as a reference when creating new character sets. To c
 copy this line without the '#' (NOTE: the line begins with a space) and paste it below, removing/adding whatever you want. You can store multiple character sets by prepending sets you dont want to currently use with a '#'. The program will use the first character set it finds without a '#' at the beginning.
 7. A new optional argument '--outfile' has been added. By default, the program will create a folder named like <INFILE NAME> + '_out', and will overwrite this folder each time the given infile is processed. If you want to process the same file multiple times, you can specify --outfile <DESCRIPTIVE FILE NAME>.
 8. All arguments (except for --infile and --outfile) have defaults specified in ascii/settings.py. You can edit these so you dont have to specify them manually each time. You can also override select settings by specifying their argument in the command line.
+
+
+## 0.3
+1. Characters are printed in color of pixel sampled to choose them. (To override this)
