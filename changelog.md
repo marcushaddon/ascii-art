@@ -17,4 +17,6 @@ copy this line without the '#' (NOTE: the line begins with a space) and paste it
 
 
 ## 0.3
-1. Characters are printed in color of pixel sampled to choose them. (To override this)
+
+1. Characters are printed in color of pixel sampled to choose them. (To override this provide optional argument nocolor)
+2. --infile now takes (and requires) an argument of a video, such as 'coolclip.mov' or 'upsetting.mpeg'
