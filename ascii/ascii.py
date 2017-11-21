@@ -1,4 +1,6 @@
 from os import listdir, path, makedirs
+import types
+import csv
 from PIL import Image, ImageEnhance, ImageDraw, ImageFont
 import click
 
@@ -117,8 +119,7 @@ def image_to_ascii(infile_name, outfile_name, font_size):
 
 
 def process_sequence(infile, outfile, font_size, font, reduceflicker, threshold, ext='png', nocolor=False):
-    """Convert a folder of images to a folder of ascii images."""
-
+    """Convert a video file to a folder of images and convert those imges to a folder of ascii images."""    
     print "BEEP BEEP BOOP PROCESSING file " + infile
 
     temp_folder = infile.split('.')[0] + '_temp'
@@ -132,6 +133,7 @@ def process_sequence(infile, outfile, font_size, font, reduceflicker, threshold,
 
     filenames = listdir(temp_folder)
 
+    # Just get files with our chosen extension
     imgs = [name for name in filenames if name[-len(ext):] == ext]
     print "{0} frames to process".format(len(imgs))
 
@@ -143,21 +145,31 @@ def process_sequence(infile, outfile, font_size, font, reduceflicker, threshold,
         """.format(ext, temp_folder)
         return
 
+    # Determine if we are using static params or dynamic ones
+    if isinstance(font_size, int):
+        font_sizes = [font_size] * len(imgfiles)
+    else:
+        font_sizes = font_size
+
+    
 
     color_matrices = None
     if not nocolor:
         print "Sampling colors..."
-        color_matrices = [color_matrix_by_point(img, font_size, font)
-                          for img in imgfiles]
+        color_matrices = [color_matrix_by_point(imgfiles[i], 
+                                                font_sizes[i%len(font_sizes)], 
+                                                font)
+                          for i in range(len(imgfiles))]
 
 
     print "Converting to BnW"
     bwimgs = [img.convert('L') for img in imgfiles]
 
     print "Converting to lum matrices."
-    lum_matrices = [lum_matrix_by_point(bwimg, font_size, font, threshold)
-                    for bwimg in bwimgs]
+    lum_matrices = [lum_matrix_by_point(bwimgs[i], font_sizes[i%len(font_sizes)], font, threshold)
+                    for i in range(len(bwimgs))]
 
+    
     print "De-jittering lum matrices."
     if reduceflicker > 0:
         lum_matrices = [compress_lum_matrix(matrix, reduceflicker) for matrix in lum_matrices]
@@ -172,7 +184,11 @@ def process_sequence(infile, outfile, font_size, font, reduceflicker, threshold,
         outimg = Image.new('RGBA', bwimgs[index].size, (0, 0, 0, 0))
         color_matrix = (color_matrices[index]
                         if color_matrices is not None else None)
-        print_chars(char_matrices[index], outimg, font_size, font, color_matrix)
+        print_chars(char_matrices[index],
+                    outimg,
+                    font_sizes[index % len(font_sizes)],
+                    font,
+                    color_matrix)
 
         outpath = out_folder + '/' + img.split('.')[0] + '.png'
         outimg.save(outpath, 'PNG')
@@ -200,6 +216,47 @@ def mkdir(folder_name):
     """Overwrite dir."""
     rmdir(folder_name)
     makedirs(folder_name)
+
+def prep_keyframes(infile):
+    fileparts = infile.split('.')
+    filename = fileparts[0]
+    ext = fileparts[1]
+    # result = run('ascii/bash/keyframes.sh %s %s %s' % (infile, filename, ext))
+    # print result
+    frame_count, _ = run('ascii/bash/framecount.sh ' + infile)
+    frame_count = int(frame_count)
+    with open(filename + '_keyframes.csv', 'w') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['frame #', 'font_size'])
+        for i in range(frame_count):
+            writer.writerow([i, ''])
+        writer.writerow(['FIN', ''])
+    print "Done!"
+
+# BOOOOOKMARRRRRK
+def maybe_read_keyframes(infile):
+    pathparts = infile.split('/')
+    path = '/'.join(pathparts[0:-1])
+    filename = pathparts[-1]
+    filename = filename.split('.')[0]
+    files = listdir(path)
+    keyframefile = None
+    for name in files:
+        if name == filename + '_keyframes.csv':
+            keyframefile = name
+            break
+    if keyframefile is None:
+        return None
+
+    font_sizes = None
+    with open(path + '/' + keyframefile) as ifile:
+        reader = csv.DictReader(ifile)
+        font_sizes = [int(row['font_size'] if row['font_size'] else 0)
+                      for row in reader]
+
+    return font_sizes
+
+
 
 
 
@@ -238,7 +295,11 @@ Name of .ttf file in /fonts to use. Must be a monospaced font, case-sensitive.
 help="""
 Ignore color.
 """)
-def process(infile, outfile, fontsize, font, reduceflicker, threshold, ext, nocolor):
+@click.option('--keyframes', is_flag=True,
+help="""
+Perform keyframe prep.
+""")
+def process(infile, outfile, fontsize, font, reduceflicker, threshold, ext, nocolor, keyframes):
     from settings import settings
     if fontsize is None:
         fontsize = settings['fontsize']
@@ -251,15 +312,25 @@ def process(infile, outfile, fontsize, font, reduceflicker, threshold, ext, noco
     if ext is None:
         ext = settings['ext']
 
-    process_sequence(infile,
-                    outfile,
-                    fontsize,
-                    font,
-                    reduceflicker,
-                    threshold,
-                    ext,
-                    nocolor)
+    infile = 'data/doves.mp4'
+    keyframes = True
+    # Look for a keyframe csv, and if we find it, set font_size to array of values read from csv
+    fontsizes = maybe_read_keyframes(infile)
+    fontsize = fontsizes if fontsizes is not None else fontsize
+
+    if keyframes:
+        prep_keyframes(infile)
+    else:
+        process_sequence(infile,
+                         outfile,
+                         fontsize,
+                         font,
+                         reduceflicker,
+                         threshold,
+                         ext,
+                         nocolor)
 
 
 if __name__ == '__main__':
     process()
+
