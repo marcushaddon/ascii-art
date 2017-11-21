@@ -220,6 +220,8 @@ def mkdir(folder_name):
 def prep_keyframes(infile):
     fileparts = infile.split('.')
     filename = fileparts[0]
+    print "INFILE ARG WAS " + infile
+    print "FILE NAME IS " + filename
     ext = fileparts[1]
     # result = run('ascii/bash/keyframes.sh %s %s %s' % (infile, filename, ext))
     # print result
@@ -297,7 +299,7 @@ Ignore color.
 """)
 @click.option('--keyframes', is_flag=True,
 help="""
-Perform keyframe prep.
+Perform keyframe prep. Outputs infile_keyframes.csv in same directory as infile.
 """)
 def process(infile, outfile, fontsize, font, reduceflicker, threshold, ext, nocolor, keyframes):
     from settings import settings
@@ -312,8 +314,6 @@ def process(infile, outfile, fontsize, font, reduceflicker, threshold, ext, noco
     if ext is None:
         ext = settings['ext']
 
-    infile = 'data/doves.mp4'
-    keyframes = True
     # Look for a keyframe csv, and if we find it, set font_size to array of values read from csv
     fontsizes = maybe_read_keyframes(infile)
     fontsize = fontsizes if fontsizes is not None else fontsize
